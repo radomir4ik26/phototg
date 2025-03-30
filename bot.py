@@ -13,8 +13,8 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-# Отримуємо токен бота з змінних середовища (для безпечного розгортання)
-TOKEN = os.environ.get("7763692205:AAFfyNOcS0TCFIg1jxR_nciOT52pMWJ09IM")
+# Використовуємо безпосередньо ваш токен
+TOKEN = "7763692205:AAFfyNOcS0TCFIg1jxR_nciOT52pMWJ09IM"
 
 # Функція для обробки команди /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -48,10 +48,8 @@ async def process_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         img = Image.open(BytesIO(response.content))
         
         # Розпізнаємо текст
-        # Налаштовуємо шлях до tesseract, якщо потрібно
-        if os.environ.get("TESSERACT_PATH"):
-            pytesseract.pytesseract.tesseract_cmd = os.environ.get("TESSERACT_PATH")
-            
+        # Для українського тексту додаємо параметр lang='ukr'
+        # Якщо потрібна підтримка різних мов, можна використати lang='ukr+eng+rus'
         text = pytesseract.image_to_string(img, lang='ukr+eng')
         
         # Перевіряємо, чи вдалося розпізнати текст
@@ -63,11 +61,9 @@ async def process_photo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
     except Exception as e:
         await update.message.reply_text(f"Помилка при обробці зображення: {str(e)}")
 
-# Функція для вебхука (Render працює через вебхуки)
-async def webhook(request):
-    return web.Response(text="OK")
-
 def main() -> None:
+    print(f"Використовую токен: {TOKEN}")
+    
     # Створюємо додаток
     application = Application.builder().token(TOKEN).build()
 
@@ -78,21 +74,28 @@ def main() -> None:
     # Додаємо обробник для фотографій
     application.add_handler(MessageHandler(filters.PHOTO, process_photo))
 
-    # Налаштовуємо вебхук для Render
-    PORT = int(os.environ.get("PORT", 8080))
+    # Запускаємо бота
+    print("Бот запущений!")
     
-    # Використовуємо змінну середовища для визначення режиму запуску
-    # На Render встановіть змінну WEBHOOK_MODE=True
-    if os.environ.get("WEBHOOK_MODE", "False").lower() == "true":
+    # Визначаємо, чи використовувати вебхук на основі змінної середовища
+    webhook_mode = os.environ.get("WEBHOOK_MODE", "False").lower() == "true"
+    
+    if webhook_mode:
         # Отримуємо URL вебхука з змінних середовища
-        WEBHOOK_URL = os.environ.get("WEBHOOK_URL")
+        webhook_url = os.environ.get("WEBHOOK_URL")
+        port = int(os.environ.get("PORT", 8080))
+        
+        print(f"Запускаємо в режимі вебхука на порту {port}")
+        print(f"Використовуємо вебхук URL: {webhook_url}")
+        
         application.run_webhook(
             listen="0.0.0.0",
-            port=PORT,
-            webhook_url=WEBHOOK_URL
+            port=port,
+            webhook_url=webhook_url
         )
     else:
-        # Для локального тестування використовуємо polling
+        # Використовуємо polling для локального запуску
+        print("Запускаємо в режимі polling")
         application.run_polling()
 
 if __name__ == "__main__":
