@@ -14,7 +14,7 @@ logging.basicConfig(
 )
 
 # Отримуємо токен бота з змінних середовища (для безпечного розгортання)
-TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
+TOKEN = os.environ.get("7763692205:AAFfyNOcS0TCFIg1jxR_nciOT52pMWJ09IM")
 
 # Функція для обробки команди /start
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
